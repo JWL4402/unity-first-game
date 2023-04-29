@@ -4,10 +4,10 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class Click : MonoBehaviour, IPointerDownHandler
+public class Clickable : MonoBehaviour, IPointerDownHandler
 {
     public bool generator; // if true, makes a copy of the object instead of moving the original
-    private List<GameObject> selectedObjects = new List<GameObject>();
+    private bool selected = false;
 
     private void AddPhysicsRaycaster()
     {
@@ -17,6 +17,18 @@ public class Click : MonoBehaviour, IPointerDownHandler
             Camera.main.gameObject.AddComponent<Physics2DRaycaster>();
         }
     }
+
+    private void GenerateClone()
+    {
+        GameObject clone = Object.Instantiate(gameObject, transform.position, Quaternion.identity);
+        
+        Clickable script = clone.GetComponent<Clickable>();
+        if (script == null) { Debug.LogError("Generator generated an object without script."); }
+        // if it's copy of object with this script, should have this script
+
+        script.generator = false;
+        script.selected = true;
+    }
     
     // FOR THE OnPointerDown FUNCTION TO WORK ;
     // There must be an EventSystems component somewhere in the project
@@ -25,28 +37,19 @@ public class Click : MonoBehaviour, IPointerDownHandler
     public void OnPointerDown(PointerEventData eventData)
     {
         GameObject target = eventData.pointerCurrentRaycast.gameObject;
+        if (target != gameObject) { return; }
 
-        if (selectedObjects.Count == 0)
+        if (selected)
         {
-            if (generator)
-            {
-                GameObject clone = Object.Instantiate(target, transform.position, Quaternion.identity);
-
-                Click script = clone.GetComponent<Click>(); 
-                if (script == null) { Debug.LogError("Generator generated an object without script."); }
-                // if it's copy of object with this script, should have this script
-
-                script.generator = false;
-                script.selectedObjects.Add(clone);
-            }
-            else
-            {
-                selectedObjects.Add(target);
-            }
+            selected = false;
         }
-        else if (selectedObjects.Contains(target))
+        else if (generator)
         {
-            selectedObjects.Remove(target);
+            GenerateClone();
+        }
+        else
+        {
+            selected = true;
         }
     }
 
@@ -58,12 +61,9 @@ public class Click : MonoBehaviour, IPointerDownHandler
 
     void Update()
     {
-        if (selectedObjects.Count == 0) { return; }
+        if (!selected) { return; }
 
         Vector2 mouse_pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        foreach (GameObject obj in selectedObjects)
-        {
-            obj.transform.position = mouse_pos;
-        }
+        gameObject.transform.position = mouse_pos;
     }
 }
