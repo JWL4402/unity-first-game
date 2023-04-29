@@ -41,3 +41,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Click Menu
+    uniqueID: 2672982633
+    locked: 0
+  - name: Player
+    uniqueID: 1657443311
+    locked: 0
