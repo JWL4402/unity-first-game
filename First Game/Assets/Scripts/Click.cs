@@ -6,7 +6,8 @@ using UnityEngine.EventSystems;
 
 public class Click : MonoBehaviour, IPointerDownHandler
 {
-    List<GameObject> selectedObjects = new List<GameObject>();
+    public bool generator; // if true, makes a copy of the object instead of moving the original
+    private List<GameObject> selectedObjects = new List<GameObject>();
 
     private void AddPhysicsRaycaster()
     {
@@ -27,9 +28,23 @@ public class Click : MonoBehaviour, IPointerDownHandler
 
         if (selectedObjects.Count == 0)
         {
-            selectedObjects.Add(target);
+            if (generator)
+            {
+                GameObject clone = Object.Instantiate(target, transform.position, Quaternion.identity);
+
+                Click script = clone.GetComponent<Click>(); 
+                if (script == null) { Debug.LogError("Generator generated an object without script."); }
+                // if it's copy of object with this script, should have this script
+
+                script.generator = false;
+                script.selectedObjects.Add(clone);
+            }
+            else
+            {
+                selectedObjects.Add(target);
+            }
         }
-        else if (selectedObjects.Count >= 1)
+        else if (selectedObjects.Contains(target))
         {
             selectedObjects.Remove(target);
         }
@@ -43,12 +58,11 @@ public class Click : MonoBehaviour, IPointerDownHandler
 
     void Update()
     {
-        Debug.Log(selectedObjects.Count);
         if (selectedObjects.Count == 0) { return; }
+
+        Vector2 mouse_pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         foreach (GameObject obj in selectedObjects)
         {
-            //Vector3 mouse_pos_3D = Input.mousePosition;
-            Vector2 mouse_pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             obj.transform.position = mouse_pos;
         }
     }
